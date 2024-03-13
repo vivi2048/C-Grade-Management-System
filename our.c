@@ -49,7 +49,8 @@ typedef struct Node* Link;
 Link head = NULL;
 typedef struct Node2* Link2;
 Link2 head2 = NULL;
-
+Link tmp;
+int Z=0;
 // 主函数 选择菜单
 int main() {
     int id;
@@ -184,32 +185,45 @@ void one_input(int id) {
         printf("进入管理员模式\n");
     }
 
-    Stu student;
+    Stu Student;
     printf("请输入学生账号:");
-    scanf("%d", &student.id);
+    scanf("%d", &Student.id);
     printf("请输入学生姓名:");
-    scanf("%s", student.name);
+    scanf("%s", Student.name);
     printf("请输入学生性别:");
-    scanf("%d", &student.sex);
+    scanf("%d", &Student.sex);
     printf("请输入学生年龄:");
-    scanf("%d", &student.age);
+    scanf("%d", &Student.age);
     printf("请输入线性代数成绩:");
-    scanf("%lf", &student.math1);
+    scanf("%lf", &Student.math1);
     printf("请输入微积分成绩:");
-    scanf("%lf", &student.math2);
+    scanf("%lf", &Student.math2);
     printf("请输入离散数学成绩:");
-    scanf("%lf", &student.math3);
+    scanf("%lf", &Student.math3);
     printf("请输入程序设计成绩:");
-    scanf("%lf", &student.pro);
-    if (head == NULL) {
-        head = (malloc)(sizeof(Node));
-        head->next = NULL;
-    }
+    scanf("%lf", &Student.pro);
     Link node;
     node = (malloc)(sizeof(Node));
-    node->student = student;
-    node->next = head->next;
-    head->next = node;
+    node->student = Student;
+    if(Z==0){
+    head=tmp=NULL;
+    head=(malloc)(sizeof(Node));
+    tmp=head;
+    tmp->next=NULL;
+	Z++;
+	}
+	if(head==NULL){
+        node->student=Student;
+ 		head=node;
+ 		tmp=node;
+ 		tmp->next=NULL;
+    }
+    else{
+		node->student=Student;
+ 		tmp->next=node;
+ 		tmp=node;
+ 		tmp->next=NULL;
+	}
     printf("录入成功！\n");
     getch();
     print_te_menu(id);
@@ -395,7 +409,7 @@ void check_grade(int id) {
             printf("%.2lf                   ", Head->student.math3);
             printf("%.2lf\n", Head->student.pro);
             Head = Head->next;
-        } while (Head->next != NULL);
+        } while (Head != NULL);
     }
     if (id == 01 || id == 02 || id == 03 || id == 04) {
         printf("进入老师模式\n");
