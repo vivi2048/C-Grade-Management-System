@@ -50,7 +50,8 @@ Link head = NULL;
 typedef struct Node2* Link2;
 Link2 head2 = NULL;
 Link tmp;
-int Z=0;
+int Z = 0;
+
 // 主函数 选择菜单
 int main() {
     int id;
@@ -78,6 +79,7 @@ void clean() {
 void st_check_grade(int id) {
     clean();
     printf("id:%d\n", id);
+
     Link p = head;
     for (;p->next == NULL;p = p->next) {
         if (id == p->student.id) {
@@ -99,6 +101,7 @@ void st_check_grade(int id) {
 void change_password(int id) {
     clean();
     printf("id:%d\n", id);
+
     int newpassword1, newpassword2;
     Link p = head;
     printf("请输入新的密码:");
@@ -205,25 +208,24 @@ void one_input(int id) {
     Link node;
     node = (malloc)(sizeof(Node));
     node->student = Student;
-    if(Z==0){
-    head=tmp=NULL;
-    head=(malloc)(sizeof(Node));
-    tmp=head;
-    tmp->next=NULL;
-	Z++;
-	}
-	if(head==NULL){
-        node->student=Student;
- 		head=node;
- 		tmp=node;
- 		tmp->next=NULL;
+    if (Z == 0) {
+        head = tmp = NULL;
+        head = (malloc)(sizeof(Node));
+        tmp = head;
+        tmp->next = NULL;
+        Z++;
     }
-    else{
-		node->student=Student;
- 		tmp->next=node;
- 		tmp=node;
- 		tmp->next=NULL;
-	}
+    if (head == NULL) {
+        node->student = Student;
+        head = node;
+        tmp = node;
+        tmp->next = NULL;
+    } else {
+        node->student = Student;
+        tmp->next = node;
+        tmp = node;
+        tmp->next = NULL;
+    }
     printf("录入成功！\n");
     getch();
     print_te_menu(id);
