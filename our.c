@@ -177,7 +177,7 @@ void re_st5te() {
     FILE* file;
     file = fopen("te.txt", "w");
     Link2 pp = head2;
-    for (int i = 0;i < 4;i++) {
+    for(int i = 0;i < 4;i++) {
         fprintf(file, "%d %d\n", pp->id, pp->password);
         pp = pp->next;
     }
@@ -727,10 +727,10 @@ void print_all(int id) {
     fclose(file);
 }
 
-void bubbleSort_math1() {
-    Link pre, cur, next, end, temp;
+void bubbleSort_math1(int i){
+    Link pre, cur, next, end, temp, p;
     end = NULL;
-    while (head->next != end) {
+    while (head->next!= end) {
         for (pre = head, cur = pre->next, next = cur->next;next != end;pre = pre->next, cur = cur->next, next = next->next) {
             if (cur->student.math1 < next->student.math1) {
                 cur->next = next->next;
@@ -743,4 +743,12 @@ void bubbleSort_math1() {
         }
         end = cur;
     }
+    printf("该科目成绩单如下:\n");
+    for (p = head->next ,i = 1;p!= NULL;p = p->next, i++){
+        printf("%d %s %.2lf\n", i, p->student.name, p->student.math1);
+    }
 }
+void evaluate(char ){
+	
+}
+
