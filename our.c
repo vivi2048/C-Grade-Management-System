@@ -12,14 +12,15 @@ void input_grade(int id);                                 // 录入成绩
 void change_grade(int id);                                // 修改成绩
 void check_grade(int id);                                 // 打印成绩
 void reset_password(int id);                              // 重置密码
-int signin(int* id);                                      // 用户登录
-int check(int id, int password);                          // 检查账号密码
 void print_st_menu(int id);                               // 打印学生菜单
 void print_te_menu(int id);                               // 打印老师菜单
 void print_op_menu(int id);                               // 打印管理员菜单  opid:0
 void score_input(int id);								  // 录入竞赛加分绩点  
 void print_all(int id);									  // 导出当前序列所有学生成绩 
-void bubbleSort_math1();                                  // 链表冒泡排序
+void bubbleSort();                                        // 链表冒泡排序
+void asa(double s[], int* max, int* min);                 // 进步空间
+int signin(int* id);                                      // 用户登录
+int check(int id, int password);                          // 检查账号密码
 
 // 学生结构体
 typedef struct student {
@@ -33,6 +34,7 @@ typedef struct student {
     double math3;                   // 离散数学   teid:3
     double pro;                     // 程序设计   teid:4
     double score;					// 竞赛加分绩点
+    char evaluation[500];           // 评语 
 } Stu;
 
 // 学生链表
@@ -148,6 +150,22 @@ void clean() {
     printf("\033[2J\033[H");
 }
 
+// 进步空间
+void asa(double s[], int* max, int* min) {
+    double t = 0, t2 = 100;
+    int i;
+    for (i = 0;i < 4;i++) {
+        if (s[i] > t) {
+            t = s[i];
+            (*max) = i;
+        }
+        if (s[i] < t2) {
+            t2 = s[i];
+            (*min) = i;
+        }
+    }
+}
+
 // 打印 id 对应的信息
 void st_check_grade(int id) {
     clean();
@@ -164,6 +182,45 @@ void st_check_grade(int id) {
             printf("离散数学成绩:\t%.2lf\n", p->student.math3);
             printf("程序设计成绩:\t%.2lf\n", p->student.pro);
             printf("竞赛加分绩点:\t%.4lf\n", p->student.score);
+            printf("教师评语:\t%s\n", p->student.evaluation);
+            int max, min;
+            double s[4];
+            s[0] = p->student.math1;
+            s[1] = p->student.math2;
+            s[2] = p->student.math3;
+            s[3] = p->student.pro;
+            asa(s, &max, &min);
+            printf("你的优势科目是");
+            switch (max) {
+            case 0:
+                printf("线性代数,");
+                break;
+            case 1:
+                printf("微积分,");
+                break;
+            case 2:
+                printf("离散数学,");
+                break;
+            case 3:
+                printf("程序设计,");
+                break;
+            }
+            printf("你的劣势科目是");
+            switch (min) {
+            case 0:
+                printf("线性代数\n");
+                break;
+            case 1:
+                printf("微积分\n");
+                break;
+            case 2:
+                printf("离散数学\n");
+                break;
+            case 3:
+                printf("程序设计\n");
+                break;
+            }
+            printf("学科差距:%.2lf\n", s[max] - s[min]);
             break;
         }
         p = p->next;
@@ -172,21 +229,25 @@ void st_check_grade(int id) {
     print_st_menu(id);
 }
 
-// 重置
+// 保存 
 void re_st5te() {
+    // 老师
     FILE* file;
     file = fopen("te.txt", "w");
     Link2 pp = head2;
-    for(int i = 0;i < 4;i++) {
+    int i;
+    for (i = 0;i < 4;i++) {
         fprintf(file, "%d %d\n", pp->id, pp->password);
         pp = pp->next;
     }
     fclose(file);
+    // 学生
     FILE* file1;
     file1 = fopen("student.txt", "w");
     Link p = head->next;
-    while (p->next != NULL) {
-        fprintf(file1, "%s %d %d %d %d %.2lf %.2lf %.2lf %.2lf %.4f\n", p->student.name, p->student.id, p->student.password, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
+    while (p != NULL) {
+        fprintf(file1, "%s %d %d %d %d %.2lf %.2lf %.2lf %.2lf %.4f", p->student.name, p->student.id, p->student.password, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
+        if (p->next != NULL) fprintf(file1, "\n");
         p = p->next;
     }
     fclose(file1);
@@ -208,23 +269,21 @@ void change_password(int id) {
     } else {
         if (id == 1 || id == 2 || id == 3 || id == 4) {
             Link2 p = head2;
-            while (p != NULL) {
+            for (;p != NULL;p = p->next) {
                 while (id == p->id) {
                     p->password = newpassword1;
                     re_st5te();
                     break;
                 }
-                p = p->next;
             }
         } else {
             Link p = head->next;
-            while (p->next != NULL) {
+            for (;p->next != NULL;p = p->next) {
                 while (id == p->student.id) {
                     p->student.password = newpassword1;
                     re_st5te(id);
                     break;
                 }
-                p = p->next;
             }
         }
     }
@@ -272,37 +331,49 @@ void file_input(int id) {
     fp = fopen(filename, "r");
     if (fp == NULL) {
         printf("文件打开出错\n");
-        return;
-    }
-    while (!feof(fp)) {
-        Stu data;
-        fscanf(fp, "%s %d %d %d %lf %lf %lf %lf", data.name, &data.id, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro);
-        Link node;
-        node = (malloc)(sizeof(Node));
-        node->student = data;
-        if (Z == 0) {
-            head = tmp = NULL;
-            head = (malloc)(sizeof(Node));
-            tmp = head;
-            tmp->next = NULL;
-            Z++;
+    } else {
+        while (!feof(fp)) {
+            Stu data;
+            fscanf(fp, "%s %d %d %d %lf %lf %lf %lf", data.name, &data.id, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro);
+
+            Link qqq = head;
+            int flag = 0;
+            for (;qqq != NULL;qqq = qqq->next) {
+                if (data.id == qqq->student.id) {
+                    flag = 1;
+                }
+            }
+            if (flag == 0) {
+                Link node;
+                node = (malloc)(sizeof(Node));
+                node->student = data;
+                if (Z == 0) {
+                    head = tmp = NULL;
+                    head = (malloc)(sizeof(Node));
+                    tmp = head;
+                    tmp->next = NULL;
+                    Z++;
+                }
+                if (head == NULL) {
+                    node->student = data;
+                    head = node;
+                    tmp = node;
+                    tmp->next = NULL;
+                } else {
+                    node->student = data;
+                    tmp->next = node;
+                    tmp = node;
+                    tmp->next = NULL;
+                }
+            }
         }
-        if (head == NULL) {
-            node->student = data;
-            head = node;
-            tmp = node;
-            tmp->next = NULL;
-        } else {
-            node->student = data;
-            tmp->next = node;
-            tmp = node;
-            tmp->next = NULL;
-        }
+        fclose(fp);
+        printf("数据加载成功\n");
     }
-    fclose(fp);
-    printf("数据加载成功\n");
     getch();
-    print_te_menu(id);
+    re_st5te();
+    if (id == 0) print_op_menu(id);
+    else print_te_menu(id);
 }
 
 // 单个录入
@@ -314,6 +385,23 @@ void one_input(int id) {
     Stu Student;
     printf("请输入学生账号:");
     scanf("%d", &Student.id);
+    if (Z != 0) {
+        Link nd;
+        nd = (malloc)(sizeof(Node));
+        nd = head;
+        int W = 0;
+        do {
+            if (Student.id == nd->student.id) {
+                W++;
+            }
+            nd = nd->next;
+        } while (Student.id == nd->student.id);
+        if (W == 1) {
+            printf("该学生已经录入\n");
+            getch();
+            print_te_menu(id);
+        }
+    }
     printf("请输入学生姓名:");
     scanf("%s", Student.name);
     printf("请输入学生性别:");
@@ -350,8 +438,10 @@ void one_input(int id) {
         tmp->next = NULL;
     }
     printf("录入成功！\n");
+    re_st5te();
     getch();
-    print_te_menu(id);
+    if (id == 0) print_op_menu(id);
+    else print_te_menu(id);
 }
 
 //录入竞赛加分绩点
@@ -404,10 +494,25 @@ void input_grade(int id) {
 }
 
 //修改成绩子系统 
-void change_grade_son(int K) {
+void change_grade_son(int K, int id) {
     printf("请输入所修改的学生的学号\n");
     int H;
     scanf("%d", &H);
+    Link nd;
+    nd = (malloc)(sizeof(Node));
+    nd = head;
+    int W = 0;
+    do {
+        if (H == nd->student.id) {
+            W++;
+        }
+        nd = nd->next;
+    } while (H == nd->student.id);
+    if (W == 0) {
+        printf("该学生不存在\n");
+        getch();
+        print_te_menu(id);
+    }
     Link Head;
     Head = head;
     while (Head->student.id != H) {
@@ -438,30 +543,32 @@ void change_grade(int id) {
         printf("3.离散数学\n");
         printf("4.程序设计\n");
         scanf("%d", &K);
-        change_grade_son(K);
+        change_grade_son(K, id);
     }
     if (id == 01) {
         K = 1;
         printf("现已进入线性代数老师编辑模式");
-        change_grade_son(K);
+        change_grade_son(K, id);
     }
     if (id == 02) {
         K = 2;
         printf("现已进入微积分老师编辑模式");
-        change_grade_son(K);
+        change_grade_son(K, id);
     }
     if (id == 03) {
         K = 3;
         printf("现已进入离散数学老师编辑模式");
-        change_grade_son(K);
+        change_grade_son(K, id);
     }
     if (id == 04) {
         K = 4;
         printf("现已进入程序设计老师编辑模式");
-        change_grade_son(K);
+        change_grade_son(K, id);
     }
+    re_st5te();
     getch();
-    print_te_menu(id);
+    if (id == 0) print_op_menu(id);
+    else print_te_menu(id);
 }
 
 // 打印成绩
@@ -484,7 +591,7 @@ void check_grade(int id) {
             printf("  %-6.2lf\t\t", Head->student.pro);
             printf("  %-4.1lf\n", Head->student.score);
             Head = Head->next;
-        } while (Head->next != NULL);
+        } while (Head != NULL);
     }
     if (id == 01 || id == 02 || id == 03 || id == 04) {
         printf("进入老师模式\n");
@@ -519,7 +626,7 @@ void check_grade(int id) {
                 printf("  %6.1lf\n", Head->student.score);
             }
             Head = Head->next;
-        } while (Head->next != NULL);
+        } while (Head != NULL);
     }
     getch();
     if (!id) {
@@ -527,6 +634,21 @@ void check_grade(int id) {
     } else {
         print_te_menu(id);
     }
+}
+
+// 录入评语 
+void evaluate(int id) {
+    printf("请输入学生id:");
+    int sid;
+    scanf("%d", &sid);
+    Link p;
+    for (p = head->next;p != NULL;p = p->next) {
+        if (sid == p->student.id) {
+            printf("请输入学生评语:");
+            scanf("%s", &p->student.evaluation);
+        }
+    }
+    print_te_menu(id);
 }
 
 // 打印老师菜单
@@ -537,12 +659,13 @@ void print_te_menu(int id) {
     printf("|2.修改成绩\n");
     printf("|3.查询成绩\n");
     printf("|4.修改密码\n");
-    printf("|5.打印成绩单\n");
-    printf("|6.退出\n");
+    printf("|5.输出文件\n");
+    printf("|6.录入评语\n");
+    printf("|7.退出\n");
     printf("请输入相应的序号选择:");
     int i;
     scanf("%d", &i);
-    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6) {
+    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6 || i == 7) {
         switch (i) {
         case 1:
             input_grade(id);
@@ -560,6 +683,9 @@ void print_te_menu(int id) {
             print_all(id);
             break;
         case 6:
+            evaluate(id);
+            break;
+        case 7:
             exit(0);
         }
     } else {
@@ -576,11 +702,12 @@ void print_op_menu(int id) {
     printf("|3.查询成绩\n");
     printf("|4.密码设置\n");
     printf("|5.导出成绩单\n");
-    printf("|6.退出\n");
+    printf("|6.录入竞赛绩点\n");
+    printf("|7.退出\n");
     printf("请输入相应的序号选择:");
     int i;
     scanf("%d", &i);
-    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6) {
+    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6 || i == 7) {
         switch (i) {
         case 1:
             input_grade(id);
@@ -598,7 +725,10 @@ void print_op_menu(int id) {
             print_all(id);
             break;
         case 6:
-            return;
+            score_input(id);
+            break;
+        case 7:
+            exit(0);
         }
     } else {
         print_op_menu(id);
@@ -624,7 +754,7 @@ void reset_password(int id) {
         while (p2 != NULL) {
             if (p2->id == i) {
                 p2->password = p2->id;
-                printf("修改成功(重置密码与id相同)");
+                printf("修改成功(重置密码与id相同)\n");
                 getch();
                 break;
             }
@@ -632,8 +762,8 @@ void reset_password(int id) {
         }
         while (p1 != NULL) {
             if (p1->student.id == i) {
-                p2->password = p2->id;
-                printf("修改成功(重置密码与id相同)");
+                p1->student.password = p1->student.id;
+                printf("修改成功(重置密码与id相同)\n");
                 getch();
                 break;
             }
@@ -651,12 +781,14 @@ void reset_password(int id) {
             p2 = p2->next;
         }
         re_st5te(id);
-        printf("初始化所有密码完成!");
+        printf("初始化所有密码完成!\n");
         getch();
         print_op_menu(id);
     } else if (flag == 3) {
         print_op_menu(id);
     } else {
+        printf("错误的输入\n");
+        getch();
         reset_password(id);
     }
     return;
@@ -705,7 +837,7 @@ int signin(int* id) {
 
 //导出当前所有成绩 
 void print_all(int id) {
-    bubbleSort_math1();
+    bubbleSort();
     FILE* file;
     char filename[100];
     printf("请输入您要另存的文件名称(若存在同名文件则会被覆盖!):");
@@ -717,20 +849,18 @@ void print_all(int id) {
         return;
     }
     Link p = head->next;
-    if (!id) {
-        fprintf(file, "姓名\t学号\t性别\t年龄\t线性代数\t微积分\t离散数学\t程序设计\t竞赛绩点\n");
-        while (p->next != NULL) {
-            fprintf(file, "%s\t%d\t%d\t%d\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t%.4f\n", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
-            p = p->next;
-        }
+    fprintf(file, "姓名\t学号\t性别\t年龄\t线性代数\t微积分\t离散数学\t程序设计\t竞赛绩点");
+    while (p != NULL) {
+        fprintf(file, "\n%s\t%d\t%d\t%d\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t%.4f", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
+        p = p->next;
     }
     fclose(file);
 }
 
-void bubbleSort_math1(int i){
+void bubbleSort() {
     Link pre, cur, next, end, temp, p;
     end = NULL;
-    while (head->next!= end) {
+    while (head->next != end) {
         for (pre = head, cur = pre->next, next = cur->next;next != end;pre = pre->next, cur = cur->next, next = next->next) {
             if (cur->student.math1 < next->student.math1) {
                 cur->next = next->next;
@@ -743,12 +873,4 @@ void bubbleSort_math1(int i){
         }
         end = cur;
     }
-    printf("该科目成绩单如下:\n");
-    for (p = head->next ,i = 1;p!= NULL;p = p->next, i++){
-        printf("%d %s %.2lf\n", i, p->student.name, p->student.math1);
-    }
 }
-void evaluate(char ){
-	
-}
-
