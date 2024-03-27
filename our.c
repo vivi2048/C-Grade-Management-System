@@ -3,36 +3,54 @@
 #include <string.h>
 #include <conio.h>
 
+#define st_start_format      "%s %d %d %d %d %lf %lf %lf %lf %lf %[^\n]"
+#define st_re_format         "%s %d %d %d %d %.2lf %.2lf %.2lf %.2lf %.4f %s"
+#define file_input_format    "%s %d %d %d %lf %lf %lf %lf"
+#define file_output_format   "\n%s\t\t%d\t\t%d\t\t%d\t\t%.2lf\t\t%.2lf\t\t%.2lf\t\t%.2lf\t\t%.4f"
+
+#define st_start_data        data.name, &data.id, &data.password, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro, &data.score, data.evaluation
+#define st_re_data           p->student.name, p->student.id, p->student.password, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score, p->student.evaluation
+#define file_input_data      data.name, &data.id, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro
+#define file_output_data     p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score
+
 void clean();                                             // 清屏
-void st_check_grade(int id);                              // 打印 id 对应的信息
-void change_password(int id);                             // 修改 id 对应的密码
-void file_input(int id);                                  // 文件录入
-void one_input(int id);                                   // 单个录入
-void input_grade(int id);                                 // 录入成绩
+void st_check_grade(int id);                              // 打印 id对应的信息
+void change_password(int id);                             // 修改 id对应的密码
+void op_file_input(int id);                               // op文件录入
+void op_one_input(int id);                                // op单个录入
+void te_file_input(int id);                               // te文件录入
+void op_input_grade(int id);                              // 录入成绩
 void change_grade(int id);                                // 修改成绩
 void check_grade(int id);                                 // 打印成绩
 void reset_password(int id);                              // 重置密码
 void print_st_menu(int id);                               // 打印学生菜单
 void print_te_menu(int id);                               // 打印老师菜单
 void print_op_menu(int id);                               // 打印管理员菜单  opid:0
-void score_input(int id);								  // 录入竞赛加分绩点  
-void print_all(int id);									  // 导出当前序列所有学生成绩 
-void bubbleSort();                                        // 链表冒泡排序
+void score_input(int id);								  // 录入竞赛  
+void print_all(int id);					     			  // 导出成绩 
+void bubbleSort(int id);                                  // 链表排序
 void asa(double s[], int* max, int* min);                 // 进步空间
+void te_start();                                          // 老师链表初始化
+void st_start();                                          // 学生链表初始化
+void re_st5te();                                          // 保存
+void change_grade_son(int K, int id);                     // 修改成绩子系统
+void evaluate(int id);                                    // 录入评语
+void delet_student(int id); 							  // 删除学生
+void te_change_grade(int id);                             // 老师成绩录入
 int signin(int* id);                                      // 用户登录
 int check(int id, int password);                          // 检查账号密码
 
 // 学生结构体
 typedef struct student {
-    char name[50];                  // 姓  名
-    int id;                         // 账  号
-    int password;                   // 密  码
-    int sex;                        // 性  别  男:1 女:0
-    int age;                        // 年  龄
-    double math1;                   // 线性代数   teid:1
-    double math2;                   // 微积分     teid:2
-    double math3;                   // 离散数学   teid:3
-    double pro;                     // 程序设计   teid:4
+    char name[50];                  // 姓名
+    int id;                         // 账号
+    int password;                   // 密码
+    int sex;                        // 性别   男:1 女:0
+    int age;                        // 年龄
+    double math1;                   // 线性代数     teid:1
+    double math2;                   // 微积分       teid:2
+    double math3;                   // 离散数学     teid:3
+    double pro;                     // 程序设计     teid:4
     double score;					// 竞赛加分绩点
     char evaluation[500];           // 评语 
 } Stu;
@@ -50,13 +68,202 @@ typedef struct Node2 {
     struct Node2* next;
 } Node2;
 
-// 全局变量
+// 全局变量 学生
 typedef struct Node* Link;
 Link head = NULL;
-typedef struct Node2* Link2;
-Link2 head2 = NULL;
 Link tmp;
 int Z = 0;
+
+// 全局变量 老师
+typedef struct Node2* Link2;
+Link2 head2 = NULL;
+
+// 主函数 选择菜单
+int main() {
+    te_start();
+    st_start();
+    int id;
+    int i = signin(&id);
+    switch (i) {
+    case 1:
+        print_op_menu(id);
+        break;
+    case 2:
+        print_te_menu(id);
+        break;
+    case 3:
+        print_st_menu(id);
+        break;
+    }
+    return 0;
+}
+
+// 打印管理员菜单
+void print_op_menu(int id) {
+    clean();
+    printf("管理员菜单\n");
+    printf("|1.录入成绩\n");
+    printf("|2.修改成绩\n");
+    printf("|3.查询成绩\n");
+    printf("|4.密码设置\n");
+    printf("|5.导出成绩\n");
+    printf("|6.录入竞赛\n");
+    printf("|7.删除学生\n");
+    printf("|8.退出\n");
+    printf("请输入相应的序号选择:");
+    int i;
+    scanf("%d", &i);
+    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6 || i == 7 || i == 8) {
+        switch (i) {
+        case 1:
+            op_input_grade(id);
+            break;
+        case 2:
+            change_grade(id);
+            break;
+        case 3:
+            check_grade(id);
+            break;
+        case 4:
+            reset_password(id);
+            break;
+        case 5:
+            print_all(id);
+            break;
+        case 6:
+            score_input(id);
+            break;
+        case 7:
+            delet_student(id);
+            break;
+        case 8:
+            exit(0);
+        }
+    } else {
+        print_op_menu(id);
+    }
+}
+
+// 打印老师菜单
+void print_te_menu(int id) {
+    clean();
+    printf("老师菜单\n");
+    printf("|1.成绩录入\n");
+    printf("|2.查询成绩\n");
+    printf("|3.修改密码\n");
+    printf("|4.导出成绩\n");
+    printf("|5.录入评语\n");
+    printf("|6.退出\n");
+    printf("请输入相应的序号选择:");
+    int i;
+    scanf("%d", &i);
+    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6) {
+        switch (i) {
+        case 1:
+            te_change_grade(id);
+            break;
+        case 2:
+            check_grade(id);
+            break;
+        case 3:
+            change_password(id);
+            break;
+        case 4:
+            print_all(id);
+            break;
+        case 5:
+            evaluate(id);
+            break;
+        case 6:
+            exit(0);
+        }
+    } else {
+        print_te_menu(id);
+    }
+}
+
+// 打印学生菜单
+void print_st_menu(int id) {
+    clean();
+    printf("学生菜单\n");
+    printf("|1.查询成绩\n");
+    printf("|2.修改密码\n");
+    printf("|3.退出\n");
+    printf("请输入相应的序号选择:");
+    int i;
+    scanf("%d", &i);
+    if (i == 1 || i == 2 || i == 3) {
+        switch (i) {
+        case 1:
+            st_check_grade(id);
+            break;
+        case 2:
+            change_password(id);
+            break;
+        case 3:
+            exit(0);
+        }
+    } else {
+        print_st_menu(id);
+    }
+}
+
+void te_change_grade(int id) {
+    clean();
+    printf("成绩录入\n");
+    printf("||1.文件覆盖\n");
+    printf("||2.单个修改\n");
+    printf("||3.返回\n");
+    printf("请输入相应的序号选择:");
+    int i;
+    scanf("%d", &i);
+    if (i == 1 || i == 2 || i == 3) {
+        switch (i) {
+        case 1:
+            te_file_input(id);
+            break;
+        case 2:
+            change_grade(id);
+            break;
+        case 3:
+            print_te_menu(0);
+        }
+    } else {
+        te_change_grade(id);
+    }
+}
+
+// 单科文件覆盖
+void te_file_input(int id) {
+    FILE* fp = NULL;
+    char filename[100];
+    printf("请输入文件地址:");
+    scanf("%s", filename);
+    fp = fopen(filename, "r");
+    if (fp == NULL) printf("文件打开出错!");
+    else {
+        while (!feof(fp)) {
+            int H;
+            double F;
+            fscanf(fp, "%d %lf", &H, &F);
+            Link Head = head->next;
+            while (Head != NULL) {
+                if (H == Head->student.id) break;
+                Head = Head->next;
+            }
+            if (Head == NULL) continue;
+            if (id == 1) Head->student.math1 = F;
+            else if (id == 2) Head->student.math2 = F;
+            else if (id == 3) Head->student.math3 = F;
+            else if (id == 4) Head->student.pro = F;
+        }
+        fclose(fp);
+        printf("数据加载成功!");
+    }
+    getch();
+    re_st5te();
+    print_te_menu(id);
+}
 
 // 老师链表初始化
 void te_start() {
@@ -99,7 +306,7 @@ void st_start() {
     }
     while (!feof(fp)) {
         Stu data;
-        fscanf(fp, "%s %d %d %d %d %lf %lf %lf %lf %lf", data.name, &data.id, &data.password, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro, &data.score);
+        fscanf(fp, st_start_format, st_start_data);
         Link node;
         node = (malloc)(sizeof(Node));
         node->student = data;
@@ -125,29 +332,9 @@ void st_start() {
     fclose(fp);
 }
 
-// 主函数 选择菜单
-int main() {
-    te_start();
-    st_start();
-    int id;
-    int i = signin(&id);
-    switch (i) {
-    case 1:
-        print_op_menu(id);
-        break;
-    case 2:
-        print_te_menu(id);
-        break;
-    case 3:
-        print_st_menu(id);
-        break;
-    }
-    return 0;
-}
-
 // 清屏
 void clean() {
-    printf("\033[2J\033[H");
+    system("cls");
 }
 
 // 进步空间
@@ -169,20 +356,21 @@ void asa(double s[], int* max, int* min) {
 // 打印 id 对应的信息
 void st_check_grade(int id) {
     clean();
-    printf("id:%d\n", id);
+    char sss[4][100] = { "线性代数","微积分","离散数学","程序设计" };
     Link p = head;
     while (p != NULL) {
         if (id == p->student.id) {
             printf("姓名:\t\t%s\n", p->student.name);
             printf("账号:\t\t%d\n", p->student.id);
-            printf("性别:\t\t%d\n", p->student.sex);
+            printf("性别:\t\t");
+            if (p->student.sex)printf("男\n");
+            else printf("女\n");
             printf("年龄:\t\t%d\n", p->student.age);
-            printf("线性代数成绩:\t%.2lf\n", p->student.math1);
             printf("微积分成绩:\t%.2lf\n", p->student.math2);
+            printf("线性代数成绩:\t%.2lf\n", p->student.math1);
             printf("离散数学成绩:\t%.2lf\n", p->student.math3);
             printf("程序设计成绩:\t%.2lf\n", p->student.pro);
             printf("竞赛加分绩点:\t%.4lf\n", p->student.score);
-            printf("教师评语:\t%s\n", p->student.evaluation);
             int max, min;
             double s[4];
             s[0] = p->student.math1;
@@ -190,37 +378,10 @@ void st_check_grade(int id) {
             s[2] = p->student.math3;
             s[3] = p->student.pro;
             asa(s, &max, &min);
-            printf("你的优势科目是");
-            switch (max) {
-            case 0:
-                printf("线性代数,");
-                break;
-            case 1:
-                printf("微积分,");
-                break;
-            case 2:
-                printf("离散数学,");
-                break;
-            case 3:
-                printf("程序设计,");
-                break;
-            }
-            printf("你的劣势科目是");
-            switch (min) {
-            case 0:
-                printf("线性代数\n");
-                break;
-            case 1:
-                printf("微积分\n");
-                break;
-            case 2:
-                printf("离散数学\n");
-                break;
-            case 3:
-                printf("程序设计\n");
-                break;
-            }
-            printf("学科差距:%.2lf\n", s[max] - s[min]);
+            printf("优势科目:\t%s\n", sss[max]);
+            printf("劣势科目:\t%s\n", sss[min]);
+            printf("学科差距:\t%.2lf分\n", s[max] - s[min]);
+            printf("教师评语:\t%s", p->student.evaluation);
             break;
         }
         p = p->next;
@@ -237,7 +398,8 @@ void re_st5te() {
     Link2 pp = head2;
     int i;
     for (i = 0;i < 4;i++) {
-        fprintf(file, "%d %d\n", pp->id, pp->password);
+        fprintf(file, "%d %d", pp->id, pp->password);
+        if (i != 3) fprintf(file, "\n");
         pp = pp->next;
     }
     fclose(file);
@@ -246,7 +408,7 @@ void re_st5te() {
     file1 = fopen("student.txt", "w");
     Link p = head->next;
     while (p != NULL) {
-        fprintf(file1, "%s %d %d %d %d %.2lf %.2lf %.2lf %.2lf %.4f", p->student.name, p->student.id, p->student.password, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
+        fprintf(file1, st_re_format, st_re_data);
         if (p->next != NULL) fprintf(file1, "\n");
         p = p->next;
     }
@@ -256,95 +418,66 @@ void re_st5te() {
 // 修改 id 对应的密码
 void change_password(int id) {
     clean();
-    printf("id:%d\n", id);
     int newpassword1, newpassword2;
     printf("请输入新的密码:");
     scanf("%d", &newpassword1);
     printf("请确认新的密码:");
     scanf("%d", &newpassword2);
     if (newpassword1 != newpassword2) {
-        printf("两次密码不一致，请重新输入!");
+        printf("两次密码不一致,请重新输入!");
         getch();
         change_password(id);
+        return;
     } else {
         if (id == 1 || id == 2 || id == 3 || id == 4) {
             Link2 p = head2;
             for (;p != NULL;p = p->next) {
                 while (id == p->id) {
                     p->password = newpassword1;
-                    re_st5te();
                     break;
                 }
             }
         } else {
             Link p = head->next;
-            for (;p->next != NULL;p = p->next) {
+            for (;p != NULL;p = p->next) {
                 while (id == p->student.id) {
                     p->student.password = newpassword1;
-                    re_st5te(id);
                     break;
                 }
             }
         }
-    }
-    printf("修改成功！\n");
-    getch();
-    if (id == 1 || id == 2 || id == 3 || id == 4) {
-        print_te_menu(id);
-    } else {
-        print_st_menu(id);
-    }
-}
-
-// 打印学生菜单
-void print_st_menu(int id) {
-    clean();
-    printf("学生菜单\n");
-    printf("|1.查询成绩\n");
-    printf("|2.修改密码\n");
-    printf("|3.退出\n");
-    printf("请输入相应的序号选择:");
-    int i;
-    scanf("%d", &i);
-    if (i == 1 || i == 2 || i == 3) {
-        switch (i) {
-        case 1:
-            st_check_grade(id);
-            break;
-        case 2:
-            change_password(id);
-            break;
-        case 3:
-            exit(0);
+        re_st5te();
+        printf("修改成功!");
+        getch();
+        if (id == 1 || id == 2 || id == 3 || id == 4) {
+            print_te_menu(id);
+        } else {
+            print_st_menu(id);
         }
-    } else {
-        print_st_menu(id);
     }
 }
 
 // 文件录入
-void file_input(int id) {
+void op_file_input(int id) {
     FILE* fp = NULL;
     char filename[100];
-    printf("请输入您要加载的文件地址：");
+    printf("请输入文件地址:");
     scanf("%s", filename);
     fp = fopen(filename, "r");
-    if (fp == NULL) {
-        printf("文件打开出错\n");
-    } else {
+    if (fp == NULL) printf("文件打开出错!");
+    else {
         while (!feof(fp)) {
             Stu data;
-            fscanf(fp, "%s %d %d %d %lf %lf %lf %lf", data.name, &data.id, &data.sex, &data.age, &data.math1, &data.math2, &data.math3, &data.pro);
-
-            Link qqq = head;
-            int flag = 0;
-            for (;qqq != NULL;qqq = qqq->next) {
-                if (data.id == qqq->student.id) {
-                    flag = 1;
-                }
-            }
-            if (flag == 0) {
-                Link node;
+            fscanf(fp, file_input_format, file_input_data);
+            data.password = data.id;
+            data.score = 0;
+            data.evaluation[0] = '#';
+            data.evaluation[1] = '\0';
+            Link qq = head;
+            Link node;
+            int flag = 1;
+            for (;qq != NULL;qq = qq->next) if (data.id == qq->student.id) flag = 0;
+            if (flag) {
                 node = (malloc)(sizeof(Node));
                 node->student = data;
                 if (Z == 0) {
@@ -355,12 +488,10 @@ void file_input(int id) {
                     Z++;
                 }
                 if (head == NULL) {
-                    node->student = data;
                     head = node;
                     tmp = node;
                     tmp->next = NULL;
                 } else {
-                    node->student = data;
                     tmp->next = node;
                     tmp = node;
                     tmp->next = NULL;
@@ -368,7 +499,7 @@ void file_input(int id) {
             }
         }
         fclose(fp);
-        printf("数据加载成功\n");
+        printf("数据加载成功!");
     }
     getch();
     re_st5te();
@@ -377,29 +508,29 @@ void file_input(int id) {
 }
 
 // 单个录入
-void one_input(int id) {
+void op_one_input(int id) {
     clean();
-    if (id == 0) {
-        printf("进入管理员模式\n");
-    }
     Stu Student;
+
     printf("请输入学生账号:");
     scanf("%d", &Student.id);
+    Student.password = Student.id;
+    Student.score = 0;
+    Student.evaluation[0] = '#';
+    Student.evaluation[1] = '\0';
     if (Z != 0) {
         Link nd;
         nd = (malloc)(sizeof(Node));
         nd = head;
         int W = 0;
         do {
-            if (Student.id == nd->student.id) {
-                W++;
-            }
+            if (Student.id == nd->student.id) W++;
             nd = nd->next;
         } while (Student.id == nd->student.id);
         if (W == 1) {
-            printf("该学生已经录入\n");
+            printf("该学生已经录入!\n");
             getch();
-            print_te_menu(id);
+            op_input_grade(id);
         }
     }
     printf("请输入学生姓名:");
@@ -437,37 +568,40 @@ void one_input(int id) {
         tmp = node;
         tmp->next = NULL;
     }
-    printf("录入成功！\n");
+    printf("录入成功!");
     re_st5te();
     getch();
-    if (id == 0) print_op_menu(id);
-    else print_te_menu(id);
+    print_op_menu(id);
 }
 
 //录入竞赛加分绩点
 void score_input(int id) {
-    if (id == 0) {
-        printf("请输入该竞赛学生的学号\n");
-        int H;
-        scanf("%d", &H);
-        Link Head;
-        Head = head;
-        while (Head->student.id != H) {
-            Head = Head->next;
-        }
-        printf("请输入该学生竞赛绩点\n");
-        double J;
-        scanf("%lf", &J);
-        Head->student.score = J;
-    } else if (id == 01 || id == 02 || id == 03 || id == 04) {
-        printf("您的权限不足");
+    clean();
+    printf("请输入竞赛学生的学号:");
+    int H;
+    scanf("%d", &H);
+    Link Head = head->next;
+    while (Head != NULL) {
+        if (H == Head->student.id) break;
+        Head = Head->next;
     }
+    if (Head == NULL) {
+        printf("该学生不存在!");
+        getch();
+        print_op_menu(id);
+    }
+    printf("请输入该学生的竞赛绩点:");
+    double J;
+    scanf("%lf", &J);
+    Head->student.score = J;
+    printf("录入成功!");
+    re_st5te();
     getch();
-    print_te_menu(id);
+    print_op_menu(id);
 }
 
-// 录入成绩 文件录入或单个录入
-void input_grade(int id) {
+// 管理员录入成绩 文件录入或单个录入
+void op_input_grade(int id) {
     clean();
     printf("录入方式\n");
     printf("||1.文件录入\n");
@@ -479,90 +613,82 @@ void input_grade(int id) {
     if (i == 1 || i == 2 || i == 3) {
         switch (i) {
         case 1:
-            file_input(id);
+            op_file_input(id);
             break;
         case 2:
-            one_input(id);
+            op_one_input(id);
             break;
         case 3:
-            print_te_menu(id);
+            print_op_menu(id);
             break;
         }
     } else {
-        input_grade(id);
+        op_input_grade(id);
     }
 }
 
-//修改成绩子系统 
+// 修改成绩子系统 
 void change_grade_son(int K, int id) {
-    printf("请输入所修改的学生的学号\n");
+    printf("请输入你要修改学生的学号:");
     int H;
     scanf("%d", &H);
-    Link nd;
-    nd = (malloc)(sizeof(Node));
-    nd = head;
-    int W = 0;
-    do {
-        if (H == nd->student.id) {
-            W++;
-        }
-        nd = nd->next;
-    } while (H == nd->student.id);
-    if (W == 0) {
-        printf("该学生不存在\n");
-        getch();
-        print_te_menu(id);
-    }
-    Link Head;
-    Head = head;
-    while (Head->student.id != H) {
+    Link Head = head->next;
+    while (Head != NULL) {
+        if (H == Head->student.id) break;
         Head = Head->next;
     }
-    printf("请输入该学生修改后的成绩\n");
+    if (Head == NULL) {
+        printf("该学生不存在!");
+        getch();
+        change_grade(id);
+    }
+    printf("请输入修改后的成绩:");
     double F;
     scanf("%lf", &F);
-    if (K == 1) {
-        Head->student.math1 = F;
-    } else if (K == 2) {
-        Head->student.math2 = F;
-    } else if (K == 3) {
-        Head->student.math3 = F;
-    } else if (K == 4) {
-        Head->student.pro = F;
-    }
+    if (K == 1) Head->student.math1 = F;
+    else if (K == 2) Head->student.math2 = F;
+    else if (K == 3) Head->student.math3 = F;
+    else if (K == 4) Head->student.pro = F;
+    printf("修改成功!");
 }
 
 // 修改成绩
 void change_grade(int id) {
+    clean();
     int K;
-    if (id == 00) {
-        printf("进入管理员模式\n");
-        printf("请选择你要修改的学科：\n");
-        printf("1.线性代数\n");
-        printf("2.微积分\n");
-        printf("3.离散数学\n");
-        printf("4.程序设计\n");
+    if (id == 0) {
+        printf("学科目录\n");
+        printf("||1.线性代数\n");
+        printf("||2.微积分\n");
+        printf("||3.离散数学\n");
+        printf("||4.程序设计\n");
+        printf("||5.返回\n");
+        printf("请选择你要修改的学科:");
         scanf("%d", &K);
-        change_grade_son(K, id);
+        if (K == 1)change_grade_son(K, id);
+        else if (K == 2)change_grade_son(K, id);
+        else if (K == 3)change_grade_son(K, id);
+        else if (K == 4)change_grade_son(K, id);
+        else if (K == 5) {
+            if (id == 0) print_op_menu(id);
+            else print_te_menu(id);
+            return;
+        } else change_grade(id);
     }
     if (id == 01) {
         K = 1;
-        printf("现已进入线性代数老师编辑模式");
         change_grade_son(K, id);
     }
     if (id == 02) {
         K = 2;
-        printf("现已进入微积分老师编辑模式");
         change_grade_son(K, id);
     }
     if (id == 03) {
         K = 3;
-        printf("现已进入离散数学老师编辑模式");
         change_grade_son(K, id);
     }
     if (id == 04) {
         K = 4;
-        printf("现已进入程序设计老师编辑模式");
         change_grade_son(K, id);
     }
     re_st5te();
@@ -573,166 +699,72 @@ void change_grade(int id) {
 
 // 打印成绩
 void check_grade(int id) {
+    clean();
     Link Head;
     Head = head->next;
     if (id == 00) {
-        printf("进入管理员模式\n");
-        printf("学生姓名\t  学生学号\t  学生年龄\t  学生性别\t  线性代数成绩 \t\t  微积分成绩 \t\t  离散数学成绩 \t\t  程序设计成绩 \t\t  竞赛绩点\n");
+        printf("姓名\t学号\t年龄\t性别\t线性代数\t微积分\t\t离散数学\t程序设计\t竞赛绩点\n");
         do {
-            printf("   %s\t\t  %d\t\t  %d\t\t", Head->student.name, Head->student.id, Head->student.age);
-            if (Head->student.sex == 0) {
-                printf("  女\t\t");
-            } else if (Head->student.sex) {
-                printf("  男\t\t");
-            }
-            printf("  %-6.2lf\t\t", Head->student.math1);
-            printf("  %-6.2lf\t\t", Head->student.math2);
-            printf("  %-6.2lf\t\t", Head->student.math3);
-            printf("  %-6.2lf\t\t", Head->student.pro);
-            printf("  %-4.1lf\n", Head->student.score);
+            printf("%s\t%d\t%d\t", Head->student.name, Head->student.id, Head->student.age);
+            if (Head->student.sex == 0) printf("女\t");
+            else printf("男\t");
+            printf("%.2lf\t\t", Head->student.math1);
+            printf("%.2lf\t\t", Head->student.math2);
+            printf("%.2lf\t\t", Head->student.math3);
+            printf("%.2lf\t\t", Head->student.pro);
+            printf("%.2lf\n", Head->student.score);
             Head = Head->next;
         } while (Head != NULL);
-    }
-    if (id == 01 || id == 02 || id == 03 || id == 04) {
-        printf("进入老师模式\n");
-        printf("学生姓名\t  学生学号\t  学生年龄\t  学生性别\t  ");
-        if (id == 01) {
-            printf("线性代数成绩 \t\t  竞赛绩点\n");
-        } else if (id == 02) {
-            printf("微积分成绩 \t\t  竞赛绩点\n");
-        } else if (id == 03) {
-            printf("离散数学成绩 \t\t  竞赛绩点\n");
-        } else if (id == 04) {
-            printf("程序设计成绩 \t\t  竞赛绩点\n");
-        }
+    } else {
+        printf("姓名\t学号\t年龄\t性别\t");
+        if (id == 1) printf("线性代数\n");
+        else if (id == 2) printf("微积分\n");
+        else if (id == 3) printf("离散数学\n");
+        else if (id == 4) printf("程序设计\n");
         do {
-            printf("   %s\t\t  %d\t\t  %d\t\t", Head->student.name, Head->student.id, Head->student.age);
-            if (!Head->student.sex) {
-                printf("  女\t\t");
-            } else {
-                printf("  男\t\t");
-            }
-            if (id == 01) {
-                printf("  %6.2lf\t\t", Head->student.math1);
-                printf("  %6.1lf\n", Head->student.score);
-            } else if (id == 02) {
-                printf("  %6.2lf\t\t", Head->student.math2);
-                printf("  %6.1lf\n", Head->student.score);
-            } else if (id == 03) {
-                printf("  %6.2lf\t\t", Head->student.math3);
-                printf("  %6.1lf\n", Head->student.score);
-            } else if (id == 04) {
-                printf("  %6.2lf\t\t", Head->student.pro);
-                printf("  %6.1lf\n", Head->student.score);
-            }
+            printf("%s\t%d\t%d\t", Head->student.name, Head->student.id, Head->student.age);
+            if (!Head->student.sex) printf("女\t");
+            else printf("男\t");
+            if (id == 01) printf("%.2lf\n", Head->student.math1);
+            else if (id == 02) printf("%.2lf\n", Head->student.math2);
+            else if (id == 03) printf("%.2lf\n", Head->student.math3);
+            else if (id == 04) printf("%.2lf\n", Head->student.pro);
             Head = Head->next;
         } while (Head != NULL);
     }
     getch();
-    if (!id) {
-        print_op_menu(id);
-    } else {
-        print_te_menu(id);
-    }
+    if (!id) print_op_menu(id);
+    else print_te_menu(id);
 }
 
 // 录入评语 
 void evaluate(int id) {
+    clean();
     printf("请输入学生id:");
     int sid;
     scanf("%d", &sid);
+    int flag = 1;
     Link p;
     for (p = head->next;p != NULL;p = p->next) {
         if (sid == p->student.id) {
+            flag = 0;
+            getchar();
             printf("请输入学生评语:");
-            scanf("%s", &p->student.evaluation);
+            char str[500];
+            scanf("%[^\n]", str);
+            strcat(p->student.evaluation, str);
+            re_st5te();
+            printf("录入成功!");
+            getch();
+            break;
         }
     }
-    print_te_menu(id);
-}
-
-// 打印老师菜单
-void print_te_menu(int id) {
-    clean();
-    printf("老师菜单\n");
-    printf("|1.录入成绩\n");
-    printf("|2.修改成绩\n");
-    printf("|3.查询成绩\n");
-    printf("|4.修改密码\n");
-    printf("|5.输出文件\n");
-    printf("|6.录入评语\n");
-    printf("|7.退出\n");
-    printf("请输入相应的序号选择:");
-    int i;
-    scanf("%d", &i);
-    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6 || i == 7) {
-        switch (i) {
-        case 1:
-            input_grade(id);
-            break;
-        case 2:
-            change_grade(id);
-            break;
-        case 3:
-            check_grade(id);
-            break;
-        case 4:
-            change_password(id);
-            break;
-        case 5:
-            print_all(id);
-            break;
-        case 6:
-            evaluate(id);
-            break;
-        case 7:
-            exit(0);
-        }
-    } else {
+    if (flag) {
+        printf("id不存在!");
+        getch();
         print_te_menu(id);
     }
-}
-
-// 打印管理员菜单
-void print_op_menu(int id) {
-    clean();
-    printf("管理员菜单\n");
-    printf("|1.录入成绩\n");
-    printf("|2.修改成绩\n");
-    printf("|3.查询成绩\n");
-    printf("|4.密码设置\n");
-    printf("|5.导出成绩单\n");
-    printf("|6.录入竞赛绩点\n");
-    printf("|7.退出\n");
-    printf("请输入相应的序号选择:");
-    int i;
-    scanf("%d", &i);
-    if (i == 1 || i == 2 || i == 3 || i == 4 || i == 5 || i == 6 || i == 7) {
-        switch (i) {
-        case 1:
-            input_grade(id);
-            break;
-        case 2:
-            change_grade(id);
-            break;
-        case 3:
-            check_grade(id);
-            break;
-        case 4:
-            reset_password(id);
-            break;
-        case 5:
-            print_all(id);
-            break;
-        case 6:
-            score_input(id);
-            break;
-        case 7:
-            exit(0);
-        }
-    } else {
-        print_op_menu(id);
-    }
+    print_te_menu(id);
 }
 
 // 重置密码
@@ -754,7 +786,7 @@ void reset_password(int id) {
         while (p2 != NULL) {
             if (p2->id == i) {
                 p2->password = p2->id;
-                printf("修改成功(重置密码与id相同)\n");
+                printf("修改成功,重置密码与id相同!");
                 getch();
                 break;
             }
@@ -763,7 +795,7 @@ void reset_password(int id) {
         while (p1 != NULL) {
             if (p1->student.id == i) {
                 p1->student.password = p1->student.id;
-                printf("修改成功(重置密码与id相同)\n");
+                printf("修改成功,重置密码与id相同!");
                 getch();
                 break;
             }
@@ -781,16 +813,11 @@ void reset_password(int id) {
             p2 = p2->next;
         }
         re_st5te(id);
-        printf("初始化所有密码完成!\n");
+        printf("初始化所有密码完成!");
         getch();
         print_op_menu(id);
-    } else if (flag == 3) {
-        print_op_menu(id);
-    } else {
-        printf("错误的输入\n");
-        getch();
-        reset_password(id);
-    }
+    } else if (flag == 3) print_op_menu(id);
+    else reset_password(id);
     return;
 }
 
@@ -830,17 +857,18 @@ int signin(int* id) {
         return flag;
     } else {
         clean();
-        printf("账号或密码错误\n");
+        printf("账号或密码错误,请重新输入!\n");
         return signin(id);
     }
 }
 
-//导出当前所有成绩 
+// 导出当前所有成绩 
 void print_all(int id) {
-    bubbleSort();
+    clean();
+    bubbleSort(id);
     FILE* file;
     char filename[100];
-    printf("请输入您要另存的文件名称(若存在同名文件则会被覆盖!):");
+    printf("请输入导出文件名称(注意若存在同名文件则会被覆盖):");
     scanf("%s", filename);
     strcat(filename, ".txt");
     file = fopen(filename, "w");
@@ -849,20 +877,46 @@ void print_all(int id) {
         return;
     }
     Link p = head->next;
-    fprintf(file, "姓名\t学号\t性别\t年龄\t线性代数\t微积分\t离散数学\t程序设计\t竞赛绩点");
+    if (id == 0)  fprintf(file, "姓名\t\t学号\t\t性别\t\t年龄\t\t线性代数\t\t微积分\t\t离散数学\t\t程序设计\t\t竞赛绩点");
+    else if (id == 1)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t线性代数");
+    else if (id == 2)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t微积分");
+    else if (id == 3)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t离散数学");
+    else if (id == 4)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t程序设计");
     while (p != NULL) {
-        fprintf(file, "\n%s\t%d\t%d\t%d\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t%.4f", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1, p->student.math2, p->student.math3, p->student.pro, p->student.score);
+        if (id == 0) fprintf(file, file_output_format, file_output_data);
+        else if (id == 1) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1);
+        else if (id == 2) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math2);
+        else if (id == 3) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math3);
+        else if (id == 4) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.pro);
         p = p->next;
     }
     fclose(file);
+    printf("导出成功!");
+    getch();
+    if (id == 0) print_op_menu(id);
+    else print_te_menu(id);
 }
 
-void bubbleSort() {
-    Link pre, cur, next, end, temp, p;
+// 链表排序
+void bubbleSort(int id) {
+    double x1, x2;
+    Link pre, cur, next, end, temp;
     end = NULL;
     while (head->next != end) {
         for (pre = head, cur = pre->next, next = cur->next;next != end;pre = pre->next, cur = cur->next, next = next->next) {
-            if (cur->student.math1 < next->student.math1) {
+            if (!id) {
+                x1 = cur->student.pro + cur->student.math3 + cur->student.math2 + cur->student.math1;
+                x2 = next->student.pro + next->student.math3 + next->student.math2 + next->student.math1;
+            } else if (id == 1) {
+                x1 = cur->student.math1;x2 = next->student.math1;
+            } else if (id == 2) {
+                x1 = cur->student.math2;x2 = next->student.math2;
+            } else if (id == 3) {
+                x1 = cur->student.math3;x2 = next->student.math3;
+            } else if (id == 4) {
+                x1 = cur->student.pro;x2 = next->student.pro;
+            }
+            if (x1 < x2) {
                 cur->next = next->next;
                 pre->next = next;
                 next->next = cur;
@@ -873,4 +927,28 @@ void bubbleSort() {
         }
         end = cur;
     }
+}
+
+// 删除学生信息
+void delet_student(int id) {
+    clean();
+    printf("请输入您要删除的学生的学号:");
+    Link NOD;
+    NOD = (malloc)(sizeof(Node));
+    NOD = head;
+    int D;
+    scanf("%d", &D);
+    while (NOD->next != NULL && NOD->next->student.id != D) {
+        NOD = NOD->next;
+    }
+    if (NOD->next == NULL) {
+        printf("学生不存在!");
+    } else {
+        NOD->next = NOD->next->next;
+        printf("删除成功!");
+    }
+    re_st5te();
+    getch();
+    if (id == 0) print_op_menu(id);
+    else print_te_menu(id);
 }
