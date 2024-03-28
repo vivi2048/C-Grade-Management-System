@@ -31,7 +31,7 @@ void reset_password(int id);                              // 重置密码
 void print_st_menu(int id);                               // 打印学生菜单
 void print_te_menu(int id);                               // 打印老师菜单
 void print_op_menu(int id);                               // 打印管理员菜单  opid:0
-void score_input(int id);								  // 录入竞赛  
+void score_input(int id);								  // 录入竞赛
 void print_all(int id);					     			  // 导出成绩 
 void bubbleSort(int flag, int id);                        // 链表排序
 void asa(double s[], int* max, int* min);                 // 进步空间
