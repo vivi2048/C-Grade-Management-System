@@ -33,7 +33,7 @@ void print_te_menu(int id);                               // 打印老师菜单
 void print_op_menu(int id);                               // 打印管理员菜单  opid:0
 void score_input(int id);								  // 录入竞赛  
 void print_all(int id);					     			  // 导出成绩 
-void bubbleSort(int id);                                  // 链表排序
+void bubbleSort(int flag, int id);                        // 链表排序
 void asa(double s[], int* max, int* min);                 // 进步空间
 void te_start();                                          // 老师链表初始化
 void st_start();                                          // 学生链表初始化
@@ -241,7 +241,7 @@ void te_file_input(int id) {
     }
     re_st5te();
     getch();
-    print_te_menu(id);
+    te_change_grade(id);
 }
 
 // 老师链表初始化
@@ -250,7 +250,7 @@ void te_start() {
     char filename[] = "te.txt";
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        printf("老师数据加载出错!\n");
+        printf("老师数据加载失败!\n");
         return;
     }
     Link2 node = NULL;
@@ -280,7 +280,7 @@ void st_start() {
     char filename[] = "student.txt";
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        printf("学生数据加载出错!\n");
+        printf("学生数据加载失败!\n");
         return;
     }
     while (!feof(fp)) {
@@ -373,7 +373,7 @@ void st_check_grade(int id) {
             printf("程序设计:\t%.2lf (%.2lf)\n", p->student.pro, jidian(p->student.pro));
             printf("竞赛绩点:\t%.2lf\n", p->student.score);
             double iii = jidian(p->student.math2) * math2iii + jidian(p->student.math1) * math1iii + jidian(p->student.math3) * math3iii + jidian(p->student.pro) * proiii;
-            printf("平均绩点:\t%.2lf\n\n", iii / (math1iii + math2iii + math3iii + proiii) + p->student.score);
+            printf("平均绩点:\t%.4lf\n\n", iii / (math1iii + math2iii + math3iii + proiii) + p->student.score);
             int max, min;
             double s[4];
             s[0] = p->student.math1;
@@ -635,7 +635,8 @@ void change_grade_son(int K, int id) {
     if (Head == NULL) {
         printf("该学生不存在!");
         getch();
-        change_grade(id);
+        if (id == 0)  change_grade(id);
+        else te_change_grade(id);
     }
     printf("请输入修改后的成绩:");
     double F;
@@ -682,7 +683,7 @@ void check_grade(int id) {
     Link Head;
     Head = head->next;
     if (id == 0) {
-        printf("姓名\t学号\t年龄\t性别\t线性代数\t微积分\t\t离散数学\t程序设计\t竞赛绩点\n");
+        printf("姓名\t学号\t\t年龄\t性别\t线性代数\t微积分\t\t离散数学\t程序设计\t竞赛绩点\n");
         do {
             printf("%s\t%d\t%d\t", Head->student.name, Head->student.id, Head->student.age);
             if (Head->student.sex == 0) printf("女\t");
@@ -695,7 +696,7 @@ void check_grade(int id) {
             Head = Head->next;
         } while (Head != NULL);
     } else {
-        printf("姓名\t学号\t年龄\t性别\t");
+        printf("姓名\t学号\t\t年龄\t性别\t");
         if (id == 1) printf("线性代数\n");
         else if (id == 2) printf("微积分\n");
         else if (id == 3) printf("离散数学\n");
@@ -838,7 +839,14 @@ int signin(int* id) {
 // 导出成绩 
 void print_all(int id) {
     clean();
-    bubbleSort(id);
+    printf("排序菜单\n");
+    printf("|1.成绩排序\n");
+    printf("|2.账号排序\n");
+    printf("请输入相应的序号选择:");
+    int flag;
+    scanf("%d", &flag);
+    if (flag == 1 || flag == 2) bubbleSort(flag, id);
+    else print_all(id);
     FILE* file;
     char filename[100];
     printf("请输入导出文件名称(注意若存在同名文件则会被覆盖):");
@@ -850,17 +858,17 @@ void print_all(int id) {
         return;
     }
     Link p = head->next;
-    if (id == 0)  fprintf(file, "姓名\t\t学号\t\t性别\t\t年龄\t\t线性代数\t\t微积分\t\t离散数学\t\t程序设计\t\t竞赛绩点");
-    else if (id == 1)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t线性代数");
-    else if (id == 2)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t微积分");
-    else if (id == 3)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t离散数学");
-    else if (id == 4)  fprintf(file, "姓名\t\t\t学号\t\t性别\t\t年龄\t\t程序设计");
+    if (id == 0)  fprintf(file, "姓名\t\t\t学号\t\t\t性别\t\t年龄\t\t线性代数\t\t微积分\t\t离散数学\t\t程序设计\t\t竞赛绩点");
+    else if (id == 1)  fprintf(file, "姓名\t\t\t学号\t\t\t性别\t\t年龄\t\t线性代数");
+    else if (id == 2)  fprintf(file, "姓名\t\t\t学号\t\t\t性别\t\t年龄\t\t微积分");
+    else if (id == 3)  fprintf(file, "姓名\t\t\t学号\t\t\t性别\t\t年龄\t\t离散数学");
+    else if (id == 4)  fprintf(file, "姓名\t\t\t学号\t\t\t性别\t\t年龄\t\t程序设计");
     while (p != NULL) {
         if (id == 0) fprintf(file, file_output_format, file_output_data);
-        else if (id == 1) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1);
-        else if (id == 2) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math2);
-        else if (id == 3) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math3);
-        else if (id == 4) fprintf(file, "\n%s\t\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.pro);
+        else if (id == 1) fprintf(file, "\n%s\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math1);
+        else if (id == 2) fprintf(file, "\n%s\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math2);
+        else if (id == 3) fprintf(file, "\n%s\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.math3);
+        else if (id == 4) fprintf(file, "\n%s\t\t%d\t\t%d\t\t%d\t\t%.2lf", p->student.name, p->student.id, p->student.sex, p->student.age, p->student.pro);
         p = p->next;
     }
     fclose(file);
@@ -871,23 +879,28 @@ void print_all(int id) {
 }
 
 // 链表排序
-void bubbleSort(int id) {
+void bubbleSort(int flag, int id) {
     double x1, x2;
     Link pre, cur, next, end, temp;
     end = NULL;
     while (head->next != end) {
         for (pre = head, cur = pre->next, next = cur->next;next != end;pre = pre->next, cur = cur->next, next = next->next) {
-            if (!id) {
-                x1 = cur->student.pro + cur->student.math3 + cur->student.math2 + cur->student.math1;
-                x2 = next->student.pro + next->student.math3 + next->student.math2 + next->student.math1;
-            } else if (id == 1) {
-                x1 = cur->student.math1;x2 = next->student.math1;
-            } else if (id == 2) {
-                x1 = cur->student.math2;x2 = next->student.math2;
-            } else if (id == 3) {
-                x1 = cur->student.math3;x2 = next->student.math3;
-            } else if (id == 4) {
-                x1 = cur->student.pro;x2 = next->student.pro;
+            if (flag == 1) {
+                if (!id) {
+                    x1 = cur->student.pro + cur->student.math3 + cur->student.math2 + cur->student.math1;
+                    x2 = next->student.pro + next->student.math3 + next->student.math2 + next->student.math1;
+                } else if (id == 1) {
+                    x1 = cur->student.math1;x2 = next->student.math1;
+                } else if (id == 2) {
+                    x1 = cur->student.math2;x2 = next->student.math2;
+                } else if (id == 3) {
+                    x1 = cur->student.math3;x2 = next->student.math3;
+                } else if (id == 4) {
+                    x1 = cur->student.pro;x2 = next->student.pro;
+                }
+            } else if (flag == 2) {
+                x1 = cur->student.id;
+                x2 = next->student.id;
             }
             if (x1 < x2) {
                 cur->next = next->next;
